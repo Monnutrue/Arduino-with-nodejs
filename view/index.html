@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Kontrol Arduino & Monitoring Suhu</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --primary-color: #0d6efd;
+      --primary-hover: #0b5ed7;
+      --background: #f2f4f8;
+      --card-bg: #ffffff;
+      --border-radius: 12px;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--background);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      padding: 30px 20px;
+      margin-bottom: 30px;
+    }
+
+    h1 {
+      color: #222;
+      margin-bottom: 10px;
+    }
+
+    .status-box {
+      font-size: 1.2rem;
+      background-color: #e9ecef;
+      border-radius: var(--border-radius);
+      padding: 12px 20px;
+      margin-top: 15px;
+      display: inline-block;
+      min-width: 200px;
+      color: #222;
+    }
+
+    button {
+      margin: 10px;
+      padding: 12px 24px;
+      font-size: 1rem;
+      border: none;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      background-color: var(--primary-color);
+      color: white;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: var(--primary-hover);
+    }
+
+    #connect {
+      margin-bottom: 30px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <button id="connect">Hubungkan ke Arduino</button>
+
+    <div class="card">
+      <h1>Monitoring Suhu</h1>
+      <div id="dataSuhu" class="status-box">Menunggu data suhu...</div>
+    </div>
+
+    <div class="card">
+      <h1>Kontrol Arduino</h1>
+      <button onclick="Arduino('1')">Nyalakan Lampu</button>
+      <button onclick="Arduino('2')">Matikan Lampu</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const connectBtn = document.getElementById("connect");
+
+    let isConnected = false;
+
+    connectBtn.addEventListener("click", () => {
+      fetch("http://localhost:3000/toggleSerial", {
+        method: "POST"
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === "connected") {
+            isConnected = true;
+            connectBtn.textContent = "Putuskan Koneksi";
+          } else if (data.status === "disconnected") {
+            isConnected = false;
+            connectBtn.textContent = "Hubungkan ke Arduino";
+          } else {
+            alert("Status tidak dikenal: " + data.status);
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          alert("Terjadi kesalahan saat toggle koneksi.");
+        });
+    });
+
+    socket.on("suhu", ({ suhu }) => {
+      document.getElementById("dataSuhu").textContent = "Suhu: " + suhu + " °C";
+    });
+
+    function Arduino(data) {
+      fetch("http://localhost:3000/arduinoAPI", {
+        method: "POST",
+        body: JSON.stringify({ data }),
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+  </script>
+</body>
+
+</html>
