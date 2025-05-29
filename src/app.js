@@ -22,7 +22,7 @@ app.post("/toggleSerial", (req, res) => {
     if (!isConnected) {
         // Connect
         port = new SerialPort({
-            path: "COM11", // Ganti sesuai port Arduino kamu
+            path: "COM11",
             baudRate: 9600,
         });
 
